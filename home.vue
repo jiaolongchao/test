@@ -36,6 +36,7 @@
             <span class="company-name">{{productCompanyName}}</span>
           </div>
 
+
         </div>
 
         <div class="product-choose-infor">
@@ -50,87 +51,12 @@
                                                                                           v-if="index < productBase.labels.length-1"></i></span>
               </div>
 
-              <div class="money-calculation-btn" v-if="trialShow && !goFlag.bohaiLifeFlag" @click="showCalculation">
+              <div class="money-calculation-btn" v-if="trialShow" @click="showCalculation">
                 <i class="calculation-icon"></i>
                 <span>保费试算</span>
               </div>
 
             </div>
-        <!-- 渤海年金接入start -->
-        <div class="product-bohaiLife-box" v-if='goFlag.bohaiLifeFlag'>
-            <ul class="try-calculation-ul">
-                   <li class="try-calculation-list">
-                      <div class="key">投保性别及年龄</div>
-                      <picker-item :data ='this.premiumLimit.tryCalDate' :vModel="this.premiumLimit.tryCalModel" ref='sexAge'></picker-item>
-                   </li>
-                   <li class="try-calculation-list">
-                      <div class="key">存入金额</div>
-                      <picker-item :data ='this.premiumLimit.tryCalNumDate' :vModel="this.premiumLimit.tryCalNumModel"></picker-item>
-                   </li>
-            </ul>
-            <div class="try-calculation-total">
-              <span class="total-key">
-                <em class="key">累计可领金额</em>
-                <em class="standard">按照80岁计算</em>
-              </span>
-              <span class="total-val">
-                <em class="figure">{{this.transformMoney(sumNianjinPrice)}}</em>
-                <em class="unit">元</em>
-              </span>
-            </div>
-            <ul class="try-calculation-getway">
-                <li class="try-calculation-list">
-                  <span class="list-title">{{this.receivAgeShow}}时一次性领取</span>
-                  <span class="list-val">
-                    <em class="figure">{{this.transformMoney(isOnePrice)}}</em>
-                    <em class="unit">元</em>
-                  </span>
-                </li>
-               <li class="try-calculation-list">
-                  <span class="list-title">{{this.receivAgeShow}}起每{{this.receiveCycleShow}}可领</span>
-                  <span class="list-val">
-                    <em class="figure">{{this.transformMoney(yearOrMonthPrice)}}</em>
-                    <em class="unit">元</em>
-                  </span>
-                </li>
-            </ul>
-            <div class="pro-select-infor-box">
-              <ul class="set-insurance-ul">
-                <li class="set-insurance-list clearfix">
-                  <div class="key">
-                    <p>交费期间</p>
-                  </div>
-                  <div class="val">
-                    <div class="input-item-box">
-                        <slider-itemC :sliderList='payPeriods'
-                                    :defaultValues="payPeriodsSelectIdx"
-                                    @checkedItemIdx='itemCheckedPayPeriods'></slider-itemC>              
-
-                    </div>
-                  </div>
-                </li>
-                <li class="set-insurance-list">
-                  <div class="key">
-                    <p>领取年龄<i class="tips-icon" @click="showreceivAgePanel"></i></p>
-                  </div>
-                  <div class="val">
-                    <slider-itemC :sliderList='receivAge' :defaultValues="receivAgeSelectIdx" @checkedItemIdx='itemCheckedreceivAgePeriods'></slider-itemC>
-                  </div>
-                </li>
-                <li class="set-insurance-list">
-                  <div class="key">
-                    <p>领取方式<i class="tips-icon" @click="showreceivWayPanel"></i></p>
-                  </div>
-                  <div class="val">
-                    <slider-itemC :sliderList='receiveCycle'
-                                    :defaultValues="receiveCycleSelectIdx"
-                                    @checkedItemIdx='itemCheckedreceiveCyclePeriods'></slider-itemC>
-                  </div>
-                </li>
-              </ul>
-            </div>
-        </div>
-        <!-- 渤海年金接入end -->
             <div class="price-choose-area" v-if="productPlans.length > 1">
               <!--选择多方案，关联责任列表-->
               <div class="price-choose-box" :class="plansNum">
@@ -582,14 +508,10 @@
       <div class="windowMask" v-if="isShowGeneSelectPro" @click="closeGeneSelectPro()"></div>
     </div>
     <!--基因检测详情页-->
-    <!--受益人说明弹窗-->
-    <full-panel title="领取方式" @closeFullPanel="closeFullPanel" :isShowFullPanel="isShowFullPanelReceivAge">
-      <p>您可以选择按年或者按月的方式领取</p>
-    </full-panel>
-    <full-panel title="领取年龄" @closeFullPanel="closeFullPanel" :isShowFullPanel="isShowReceivWay">
-      <p>您可以选择从60周岁领取或65周岁领取</p>
-    </full-panel>
-    
+    <!--是否报备 -->
+    <div class="mask-poup" :class="{'changeZindex': isShowRealNamePop}">
+      <sure-pop :popInfor="popInfor" :isShow="isShowRealNamePop" @leftBtnCallback='realNamePopLeft'></sure-pop>
+    </div>
   </div>
 </template>
 
@@ -603,16 +525,13 @@ import {Datetime} from 'vux'
 import {fetch} from '../../api/fetch.js'
 import {apiUrl, proParam} from '../../api/api.js'
 import $ from 'jquery'
-import {timestampToTime, setSession, noScroll, canScroll , formatMoney} from '../../tools/utils'
+import {timestampToTime, setSession, noScroll, canScroll} from '../../tools/utils'
 import share from '../../tools/share'
 import moment from 'moment'
 import toast from '../../components/toast/toast.js'
 import Scroller from 'vue-slim-better-scroll'
 import BottomFixedbtn from '../../components/BottomFixedbtn.vue'
-import pickerItem from '../../components/picker/picker'
-import { constants } from 'crypto';
-import { debug } from 'util';
-import fullPanel from "../../components/comFullPanel";
+import surePop from '../../components/comPop'
 
 export default {
   name: 'proDetails',
@@ -625,8 +544,7 @@ export default {
     Scroller,
     BottomFixedbtn,
     selectItem,
-    pickerItem,
-    fullPanel
+    surePop
   },
   created () {
     this.getProDetailsInfo()
@@ -718,36 +636,8 @@ export default {
       //   h5Introduce: ''
       // },
       productRule: {
-        insuredAgeLimit: {},
-        premiumLimit:[] //保险限制
+        insuredAgeLimit: {}
       },
-      premiumLimit : { //保费限制
-        tryCalDate : [],
-        tryCalModel : [],
-        tryCalNumDate : [],
-        tryCalNumModel : []
-      },
-      receivAge:[], //渤海年金 领取年龄
-      receivAgeList:{},      
-      receivAgeSelectIdx: 0 ,////
-      receivAgeDefaultValues:'',////
-      receivAgeShow:'',
-      receivAgeUnit:'',////
-      receivAgeDate:'',////
-      receiveCycle:[], //渤海年金 领取方式 
-      receiveCycleSelectIdx: 0,////
-      receiveCycleShow:'',
-      receiveCycleDefaultValues:'',////
-      receiveCycleDate:'',////
-      receiveCycleVal:'',////
-      paymentWay:"",////缴费方式
-      sumNianjinPrice:"", ////累计可领取金额
-      isOnePrice:"",////一次性可领取金额
-      yearOrMonthPrice:"",////每月可领取养老金
-      totalPremium:"", ////总保费,
-      priceNumbh:"", ////领取金额
-      isShowFullPanelReceivAge:false, //领取年龄弹框
-      isShowReceivWay:false,
       applicant: {},
       // flag: true,
       // beginMoneyFlag: true,
@@ -795,6 +685,7 @@ export default {
       // fjxName: ['重疾保险金', '恶性肿瘤保险金'],
       // fjxMoney: ['10万', '20万', '50万'],
       dateVal: '请选择被保人出生日期',
+      birthdayDate:'',
       /* 附加险右侧金额数组 */
       fjxTotalPrice: 0,
       /* 产品标志 */
@@ -818,9 +709,7 @@ export default {
         // 基因检测
         geneFlag: false,
         // 家财险
-        houseFlag: false,
-        //渤海年金
-        bohaiLifeFlag: false
+        houseFlag: false
       },
       checkedItemFjxStartBuy: {},
       // 是否是服务类订单---如果是服务类订单，用trial.plans关联，否则用amonts
@@ -843,7 +732,7 @@ export default {
       paymentDate: '',
       // insurePlan: '',
       // socailSecurityOnline: '',
-      sex: '1',
+      // sex: '',
       age: '',
       /* 是否经过试算 */
       initCalcu: false,
@@ -851,6 +740,12 @@ export default {
       // 产品下架信息
       saleStatus: false,
       saleInfo: '',
+      // 产品报备信息
+      submitMask: {},
+      /* 弹窗内容 */
+      popInfor: '',
+      /* 报备信息弹窗 */
+      isShowRealNamePop: false,
       trialShow: true,
       // 试算 入参 产品列表
       calcProList: [],
@@ -861,7 +756,7 @@ export default {
       // 保障方案需要
       partnerItemId: '',
       goInsuranceTxt: '立即投保',
-      isNewOrder: '', //是否新单
+      isNewOrder: '',
       itemId: '',
       // isjmi: proParam.jdmall,
       footerBtnData: {
@@ -879,13 +774,12 @@ export default {
       supportReservation: false,
       reservationImg: '//storage.360buyimg.com/public-static-resource/insurance/images/yuyue_banner.png',
       activityType: '', // 活动编码 预约用
-      classroomList: [] // 教育楼层
+      classroomList: [], // 教育楼层
+      payFrequenciesWay: '',
+      effectiveDate: ''
     }
   },
   methods: {
-    transformMoney(num){
-      return formatMoney(num)
-    },
     // 预约
     onReservation () {
       let productInfo = {productCode: this.itemId, productName: encodeURIComponent(this.productBase.name), activityType: this.activityType}
@@ -897,8 +791,21 @@ export default {
     goGuaranteeDetails () {
       this.$router.push({path: 'guaranteeDetails', query: {productId: this.productId, itemId: this.itemId}})
     },
+    realNamePopLeft () {
+      this.isShowRealNamePop = !this.isShowRealNamePop
+    },
     /* 跳转至录单页 */
     goSetInsurance () {
+      if (this.submitMask && this.submitMask.needMask) {
+        this.isShowRealNamePop = !this.isShowRealNamePop
+        this.popInfor = {
+          popTitle: '',
+          popText: this.submitMask.info,
+          sureBtnText: '',
+          cancelBtnText: this.submitMask.cancelBtnName
+        }
+        return
+      }
       if (this.saleStatus) {
         toast({message: this.saleInfo})
         return
@@ -925,10 +832,6 @@ export default {
       setSession('amountsFlag', this.amountsFlag)
       // partnerItemId
       setSession('partnerItemId', this.partnerItemId)
-      // 领取年龄
-      setSession('receivAgeSelectIdx', this.receivAgeSelectIdx)
-      // 领取方式
-      setSession('receiveCycleSelectIdx', this.receiveCycleSelectIdx)
 
       let goPath = ''
       // let goFlag = '';
@@ -954,8 +857,6 @@ export default {
       } else if (typeof (this.goFlag.returnFlag) !== 'undefined' && this.goFlag.returnFlag) {
         // this.goFlag.returnFlag 返还型产品--多一个返还金，试算结果不在底部按钮区。底部按钮区金额固定
         goPath = 'setInsuranceYear'
-      } else if(typeof (this.goFlag.bohaiLifeFlag) !== 'undefined' && this.goFlag.bohaiLifeFlag) {
-        goPath = 'setInsuranceBoHaiYear'
       } else {
         // this.goFlag.giveFlag 赠险--底部按钮不同
         // this.goFlag.renewalFlag 续期产品--多一个续期模块
@@ -989,7 +890,7 @@ export default {
     async tryCalculation () {
       this.initCalcu = true
       let _this = this
-      let list = await this.getCalcParams()
+      let list = this.getCalcParams()
       await fetch.post({
         url: apiUrl.calculateProductRatePriceForOnline,
         data: {
@@ -998,10 +899,6 @@ export default {
       }, (res) => {
         if (res.code === '000000') {
           _this.sumPrice = res.value.sumPrice
-          _this.sumNianjinPrice = res.value.sumNianjinPrice
-          _this.isOnePrice = res.value.isOnePrice
-          _this.yearOrMonthPrice = res.value.yearOrMonthPrice
-          _this.totalPremium = res.value.totalPremium
         } else {
           toast({message: res.message || '试算失败请稍后重试或联系客服[错误：' + res.code + ']'})
         }
@@ -1041,6 +938,7 @@ export default {
     itemCheckedPayFrequencies (item, idx, val) {
       this.payFrequenciesSelectIdx = idx
       this.payFrequenciesDefaultValues = val
+      this.payFrequenciesWay = item.otherValue; // 年交 月缴
       this.tryCalculation()
     },
     // 已选缴费年限
@@ -1049,25 +947,6 @@ export default {
       this.payPeriodsDefaultValues = val
       this.payPeriodsUnit = item.otherType
       this.paymentDate = item.otherValue
-      this.tryCalculation()
-    },
-    // 已选领取年龄 渤海年金
-    itemCheckedreceivAgePeriods (item, idx, val) {
-      this.receivAgeSelectIdx = idx
-      this.receivAgeDefaultValues = val
-      this.receivAgeUnit = item.otherType
-      this.receivAgeDate = item.otherValue
-      this.receivAgeShow = item.display
-      console.log(this.receivAgeDefaultValues,this.receivAgeDate)
-      this.tryCalculation()
-    },
-    // 已选领取方式 渤海年金
-    itemCheckedreceiveCyclePeriods (item, idx, val) {
-      this.receiveCycleSelectIdx = idx
-      this.receiveCycleDefaultValues = val
-      this.receiveCycleDate = item.display
-      this.receiveCycleVal = item.value
-      this.receiveCycleShow = item.display.charAt(1)
       this.tryCalculation()
     },
     // 已选保障期间
@@ -1217,6 +1096,7 @@ export default {
           renewal: this.$route.query.renewal,
           repurchase: this.$route.query.repurchase,
           orderId: this.$route.query.orderId,
+          policyId: this.$route.query.policyId,
           policyNo: this.$route.query.policyNo,
           sourceNotify: this.$route.query.sourceNotify,
           activityOrderId,
@@ -1232,10 +1112,12 @@ export default {
           if (!res.response.saleStatus) {
             _this.saleStatus = true
             _this.saleInfo = res.response.saleInfo
-            
           }
+          // 是否报备中
+          _this.submitMask = {...res.response.submitMask}
           // _this.productId = _this.$route.query.productId;
           _this.itemId = res.response.base.itemId || ''
+
           // 咨询 和店铺需要参数
           _this.footerBtnData.itemId = res.response.base.itemId
           if (res.jmiShopId) {
@@ -1313,6 +1195,7 @@ export default {
               _this.clauses.common = res.response.clauses.common
             }
           }
+
           /* 投保计划 */
           if (res.response.plans) {
             _this.productPlans = res.response.plans
@@ -1324,39 +1207,9 @@ export default {
           /* 投保规则--年龄 */
           if (res.response.rule) {
             _this.productRule = res.response.rule;
-            let receivAgeList = res.response.rule.receivAgeList;
-            if(receivAgeList && receivAgeList.receivingAgeList){ //渤海年金 领取年龄
-               _this.receivAgeList = receivAgeList;
-               _this.receivAge = receivAgeList.receivingAgeList;
-               if(_this.receivAge.length === 0){
-                 _this.receivAgeDefaultValues = ''
-                 _this.receivAgeSelectIdx = 0
-                 _this.receivAgeShow = ''
-               }else{
-                 _this.receivAgeUnit = _this.receivAgeList.receivingType;
-                 _this.receivAgeDate = _this.receivAge[0].otherValue
-                 _this.receivAgeDefaultValues = _this.receivAge[0].value
-                 _this.receivAgeShow = _this.receivAge[0].display
-               }
+            if (res.response.rule.effectiveDate) {
+              _this.effectiveDate = res.response.rule.effectiveDate.minInfo;
             }
-            if(res.response.rule.receiveCycleList){ //渤海年金 领取方式
-                _this.receiveCycle = res.response.rule.receiveCycleList;
-                if(_this.receiveCycle.length === 0){
-                  _this.payPeriodsDefaultValues = ''
-                  _this.receiveCycleSelectIdx = 0
-                  _this.receiveCycleShow = ''
-                  _this.receiveCycleVal = ''
-                }else{
-                  _this.receiveCycleDate = _this.receiveCycle[0].display
-                  _this.receiveCycleVal = _this.receiveCycle[0].value
-                  _this.receiveCycleShow = _this.receiveCycle[0].display.charAt(1)
-                }
-            }
-            if(res.response.rule.premiumLimit){
-              _this.showPremiumLimit(); //bohai
-              _this.getpremiumMsg(1); //bohai
-            }
-            
           }
           if (res.response.applicant) {
             _this.applicant = res.response.applicant
@@ -1386,118 +1239,140 @@ export default {
             // }
           }
 
-          /* 附加险 */
-          if (res.response.ableAddItemList) {
-            _this.productAbleAddItemList = res.response.ableAddItemList
-            _this.productAbleAddItemList.map(function (item) {
-              _this.$set(item, 'show', false)
-              _this.$set(item, 'display', item.name)
-            })
-          }
-          if (_this.productBase.company) {
-            _this.productCompanyName = res.response.base.company.simpleName
-          }
-          /* 保费试算模块 */
-          if (res.response.trial) {
-            // _this.trial = res.response.trial;
-            if (res.response.trial.amounts) {
-              _this.amounts = res.response.trial.amounts
-              // 如果只有一个数据，则默认选中第一个
-              if (_this.amounts.length === 0) {
-                _this.amountsDefaultValues = ''
-                _this.amountsSelectIdx = 0
-              } else {
-                _this.amountsDefaultValues = _this.amounts[0].value
+            /*附加险*/
+            if (res.response.ableAddItemList) {
+              _this.productAbleAddItemList = res.response.ableAddItemList;
+              _this.productAbleAddItemList.map(function (item) {
+                _this.$set(item, 'show', false);
+                _this.$set(item, 'display', item.name);
+              });
+            }
+            if (_this.productBase.company) {
+              _this.productCompanyName = res.response.base.company.simpleName;
+            }
+            /*保费试算模块*/
+            if (res.response.trial) {
+              // _this.trial = res.response.trial;
+              if (res.response.trial.amounts) {
+                _this.amounts = res.response.trial.amounts;
+                //如果只有一个数据，则默认选中第一个
+                if (_this.amounts.length === 0) {
+                  _this.amountsDefaultValues = '';
+                  _this.amountsSelectIdx = 0;
+                } else {
+                  _this.amountsDefaultValues = _this.amounts[0].value;
+                }
+              }
+              if (res.response.trial.genderList) {
+                _this.genderList = res.response.trial.genderList.reverse();
+                if (_this.genderList.length === 0) {
+                  _this.genderListDefaultValues = '';
+                  _this.genderListSelectIdx = 0;
+                } else {
+                  _this.genderListDefaultValues = _this.genderList[0].value;
+                }
+              }
+              if (res.response.trial.smokedList && res.response.trial.smokedList.length > 0) {
+                _this.smokedList = res.response.trial.smokedList
+                _this.smokedListDefaultValues = _this.smokedList[0].value;
+              }
+              if (res.response.trial.payFrequencies) {
+                _this.payFrequencies = res.response.trial.payFrequencies;
+                if (_this.payFrequencies.length === 0) {
+                  _this.payFrequenciesDefaultValues = '';
+                  _this.payFrequenciesSelectIdx = 0;
+                } else {
+                  _this.payFrequenciesDefaultValues = _this.payFrequencies[0].value;
+                  _this.payFrequenciesWay = _this.payFrequencies[0].otherValue;
+                }
+              }
+              if (res.response.trial.payPeriods) {
+                _this.payPeriods = res.response.trial.payPeriods;
+                if (_this.payPeriods.length === 0) {
+                  _this.payPeriodsDefaultValues = '';
+                  _this.payPeriodsSelectIdx = 0;
+                } else {
+                  _this.payPeriodsUnit = _this.payPeriods[0].otherType;
+                  _this.paymentDate = _this.payPeriods[0].otherValue;
+                  _this.payPeriodsDefaultValues = _this.payPeriods[0].value;
+                }
+              }
+              if (res.response.trial.insurancePeriods) {
+                _this.insurancePeriods = res.response.trial.insurancePeriods;
+                if (_this.insurancePeriods.length === 0) {
+                  _this.insurancePeriodsDefaultValues = '';
+                  _this.insurancePeriodsSelectIdx = 0;
+                } else {
+                  _this.insureDateUnit = _this.insurancePeriods[0].otherType;
+                  _this.insurancePeriodsDefaultValues = _this.insurancePeriods[0].otherValue;
+                }
+              }
+              if (res.response.trial.socialSecurities) {
+                _this.socialSecurities = res.response.trial.socialSecurities;
+                if (_this.socialSecurities.length === 0) {
+                  _this.socialSecuritiesDefaultValues = '0';
+                  _this.socialSecuritiesSelectIdx = 0;
+                } else {
+                  _this.socialSecuritiesDefaultValues = _this.socialSecurities[0].value;
+                }
               }
             }
-            if (res.response.trial.genderList) {
-              _this.genderList = res.response.trial.genderList.reverse()
-              if (_this.genderList.length === 0) {
-                _this.genderListDefaultValues = ''
-                _this.genderListSelectIdx = 0
-              } else {
-                _this.genderListDefaultValues = _this.genderList[0].value
+            //到底是用amounts关联责任列表 还是用plans关联，需要确认
+            if (res.response.trial) {
+              /*试算默认值--非服务类*/
+              if (res.response.trial.amounts && !_this.isServerOrder) {
+                _this.activePlansAmount = res.response.trial.amounts[0].value
               }
             }
-            if (res.response.trial.smokedList && res.response.trial.smokedList.length > 0) {
-              _this.smokedList = res.response.trial.smokedList
-              _this.smokedListDefaultValues = _this.smokedList[0].value
+            /*试算默认值--服务类*/
+            if (_this.isServerOrder) {
+              // _this.activePlansAmount = res.response.plans[0].amount
+              _this.activePlansAmount = res.response.plans[0].amount;
             }
-            if (res.response.trial.payFrequencies) {
-              _this.payFrequencies = res.response.trial.payFrequencies
-              if (_this.payFrequencies.length === 0) {
-                _this.payFrequenciesDefaultValues = ''
-                _this.payFrequenciesSelectIdx = 0
-              } else {
-                _this.payFrequenciesDefaultValues = _this.payFrequencies[0].value
-              }
+            if (_this.goFlag.geneFlag) {
+              _this.geneFlagDetails = true;
+              // _this.proTitleList = ['产品优势','服务指南','注意事项'];
+              _this.geneSelectListData = res.response.otherInfo && res.response.otherInfo.scheme
             }
-            if (res.response.trial.payPeriods) { //交费期间
-              _this.payPeriods = res.response.trial.payPeriods
-              if (_this.payPeriods.length === 0) {
-                _this.payPeriodsDefaultValues = ''
-                _this.payPeriodsSelectIdx = 0
-              } else {
-                _this.payPeriodsUnit = _this.payPeriods[0].otherType
-                _this.paymentDate = _this.payPeriods[0].otherValue
-                _this.payPeriodsDefaultValues = _this.payPeriods[0].value
-              }
-            }
-            if (res.response.trial.insurancePeriods) {
-              _this.insurancePeriods = res.response.trial.insurancePeriods
-              if (_this.insurancePeriods.length === 0) {
-                _this.insurancePeriodsDefaultValues = ''
-                _this.insurancePeriodsSelectIdx = 0
-              } else {
-                _this.insureDateUnit = _this.insurancePeriods[0].otherType
-                _this.insurancePeriodsDefaultValues = _this.insurancePeriods[0].otherValue
-              }
-            }
-            if (res.response.trial.socialSecurities) {
-              _this.socialSecurities = res.response.trial.socialSecurities
-              if (_this.socialSecurities.length === 0) {
-                _this.socialSecuritiesDefaultValues = '0'
-                _this.socialSecuritiesSelectIdx = 0
-              } else {
-                _this.socialSecuritiesDefaultValues = _this.socialSecurities[0].value
-              }
-            }
-          }
-          // 到底是用amounts关联责任列表 还是用plans关联，需要确认
-          if (res.response.trial) {
-            /* 试算默认值--非服务类 */
-            if (res.response.trial.amounts && !_this.isServerOrder) {
-              _this.activePlansAmount = res.response.trial.amounts[0].value
-            }
-          }
-          /* 试算默认值--服务类 */
-          if (_this.isServerOrder) {
-            // _this.activePlansAmount = res.response.plans[0].amount
-            _this.activePlansAmount = res.response.plans[0].amount
-          }
-          if (_this.goFlag.geneFlag) {
-            _this.geneFlagDetails = true
-            // _this.proTitleList = ['产品优势','服务指南','注意事项'];
-            _this.geneSelectListData = res.response.otherInfo && res.response.otherInfo.scheme
-          }
-          if(_this.goFlag.bohaiLifeFlag){ //判断产品类型确认是否自动试算
-             this.tryCalculation()
-          }
+
           // 监听页面滚动
           _this.$nextTick(() => {
             console.log(123123)
             window.addEventListener('scroll', _this.onScrollHanlder)
           })
-
-          // 分享
+          // 是否禁用分享
+          let supportShare = res.response.shareInfo && res.response.shareInfo.supportShare;
           let shareData = window.data_source_100001843 && window.data_source_100001843.shareConfig ? window.data_source_100001843.shareConfig : null
-          share && share.setShare({
-            title: _this.productBase.name || shareData.title,
-            desc: _this.productBase.subTitle || shareData.desc,
-            imgUrl: shareData.imgUrl,
-            link: window.location.href
-          })
 
+          if (supportShare) {
+            _this.$share && _this.$share.setShare({
+              title: _this.productBase.name || shareData.title,
+              desc: _this.productBase.subTitle || shareData.desc,
+              imgUrl: shareData.imgUrl,
+              link: window.location.href
+            }, {
+              data: { // 签名接口参数
+                appidFlag: 'LGYyr895u8', // 公众号标识
+                curUrl: window.location.href.replace(/\*/g, '%2a') // 当前url
+              }
+            });
+          } else {
+            _this.$share && _this.$share.setShare({
+              title: _this.productBase.name || shareData.title,
+              desc: _this.productBase.subTitle || shareData.desc,
+              imgUrl: shareData.imgUrl,
+              // link: window.location.href,
+              channels: [''],
+              link: ['']
+            }, {
+              data: { // 签名接口参数
+                appidFlag: 'LGYyr895u8', // 公众号标识
+                curUrl: window.location.href.replace(/\*/g, '%2a') // 当前url
+              }
+            });
+          }
+
+          //
           switch (_this.productPlans.length) {
             case 2:
               return _this.plansNum = 'two-price'
@@ -1509,7 +1384,6 @@ export default {
               return _this.plansNum = 'four-price'
               break
           }
-          
         } else {
           toast({message: res.message})
         }
@@ -1668,7 +1542,8 @@ export default {
           _this.age = Math.floor(moment(new Date()).diff(moment(birth), 'years', true))
           // 转成年龄传给试算接口
           // _this.age = current.diff(birth, 'years', true);
-          _this.dateVal = val
+          _this.dateVal = val;
+          _this.birthdayDate = val;
           _this.tryCalculation()
         },
         onShow () {
@@ -1677,99 +1552,14 @@ export default {
         }
       })
     },
-    /**投保性别及年龄 存入金额 月标准 和 年标准*/
-    showPremiumLimit() {
-      let _this = this;
-      let premiumLimit = _this.productRule.premiumLimit;
-      let totalBase = [];
-      let depositMethod = [];
-      for(var i=0;i<premiumLimit.length;i++){
-        let res = premiumLimit[i];
-        let numAry = _this.getScope( res.singlePremiumMax.value,res.singlePremiumMin.value, res.premiumMultiple.value, res.singlePremiumMin.unitName)
-        let numMin = res.singlePremiumMin.value + res.singlePremiumMin.unitName;
-        let baseDate = {
-          tryCalDate: [ ["男", "女"], _this.getScope(res.ageMax.value, res.ageMin.value, 1, res.ageMin.unitName) ],
-          tryCalModel: ["男", res.ageMin.value + res.ageMin.unitName],
-          key: res.depositMethod
-        };
-        if (res.depositMethod == 1) {//每月
-          depositMethod.push("每月");
-          baseDate['tryCalNumDate'] = [depositMethod, numAry]
-          baseDate['tryCalNumModel'] = ['每月', numMin],
-          baseDate['name'] = '每月';
-        } else if (res.depositMethod == 2) {//每年
-          depositMethod.push("每年");
-          baseDate['tryCalNumDate'] = [depositMethod, numAry]
-          baseDate['tryCalNumModel'] = ['每年', numMin]
-          baseDate['name'] = '每年';
-        }
-        totalBase.push(baseDate)
-      }
-      _this.productRule.premiumLimit = totalBase;
-    },
-    /*计算年龄和金额区间ary */
-    getScope(max,min,step,unitName){
-      let len = (max - min) / step;
-      let ary = [];
-      for(var i = 0; i<= len; i++){
-        ary.push( parseInt(min) + step * i + unitName)
-      }
-      return ary;
-    },
-    /**获取保费限制 model值 */
-    getpremiumMsg(type){
-      let _this = this;
-      let base = _this.productRule.premiumLimit;
-      if(typeof type == 'number'){ //初始化赋值
-          let d = base.filter(res => res.key == type)[0]
-          this.premiumLimit = d;
-          this.age = parseInt(d.tryCalModel[1]).toString();
-          this.priceNum = parseInt(d.tryCalNumModel[1]).toString();
-          this.paymentWay = '1';
-      }else if( (typeof type != 'number' && type[0] == '每年') ||  (typeof type != 'number' && type[0] == '每月')){ 
-          let d = base.filter(res => res.name == type[0])[0]
-          this.premiumLimit = d;
-          this.premiumLimit.tryCalNumModel = type;
-          this.priceNum = parseInt(type[1]).toString();
-          this.paymentWay = d['key'].toString();
-      }else{ //切换赋值type
-          this.premiumLimit.tryCalModel = type;
-          this.sex = type[0] == '男' ? '1' : '2'
-          this.age = parseInt(type[1]).toString()
-      }
-      //this.$forceUpdate()
-      console.log('premiumLimit', this.premiumLimit)
-    },
-    /**优化 tyle类型变化时年龄区间不渲染 的问题 待优化*/
-    setTryCalModel(v){
-      let dom = this.$refs['sexAge'].$el.querySelectorAll('.pickStyle-right')[0];
-      dom.innerHTML = v.indexOf('岁') > 0 ? v : this.premiumLimit.tryCalModel[1];
-    },
     // 获取试算参数
     getCalcParams () {
-      console.log('getCalcParams' , this.sex,this.age ,this.priceNum , this.paymentWay)
       let list = []
       for (let k = 0; k < this.calcProList.length; k++) {
         let listItem = {}
         let productCode = this.calcProList[k]
         if (k === 0) {
-          if(productCode == '1100062703'){ //渤海年金
-              listItem = {
-              'productCode': productCode,
-              'buyNumber': this.buyNumber,
-              'mainProductCode': '',
-              'paymentDate': this.paymentDate, // 交费期间
-              'paymentDateUnit': this.payPeriodsUnit, // 缴费方式单位
-              'age': typeof this.age !== 'undefined' ? this.age.toString() : '',
-              'sex': this.sex.toString(),
-              'priceNum':this.priceNum, //存入金额
-              'receiveMoneyTime': this.receivAgeDate, //领取年龄
-              'receiveMoneyUnit': this.receivAgeUnit, //领取年龄单位
-              'receiveWay':this.receiveCycleVal, //领取方式 
-              'paymentWay':this.paymentWay.toString() //缴费方式
-            }
-          }else{
-            listItem = {
+          listItem = {
             'productCode': productCode,
             // "priceNum": this.priceNum,
             'buyNumber': this.buyNumber,
@@ -1777,16 +1567,17 @@ export default {
             'insureDate': this.insurancePeriodsDefaultValues, // 保障期间
             'insureDateUnit': this.insureDateUnit, // 保障期间单位
             'paymentDate': this.paymentDate, // 缴费方式
+            "paymentWay": this.payFrequenciesWay, //
             'paymentDateUnit': this.payPeriodsUnit, // 缴费方式单位
             'insurePlan': this.amountsDefaultValues,
             'socailSecurity': this.socialSecuritiesDefaultValues,
             'age': typeof this.age !== 'undefined' ? this.age.toString() : '',
             'haveSmoke': typeof this.smokedListDefaultValues !== 'undefined' ? this.smokedListDefaultValues.toString() : '',
             'sex': typeof this.genderListDefaultValues !== 'undefined' ? this.genderListDefaultValues.toString() : '',
-            'newBill': this.isNewOrder
+            'newBill': this.isNewOrder,
+            'birthdayDate': this.birthdayDate,
+            'effectiveDate': this.effectiveDate
           }
-          }
-          
         } else {
           listItem = {
             'productCode': productCode,
@@ -1796,13 +1587,16 @@ export default {
             'insureDate': this.insurancePeriodsDefaultValues, // 保障期间
             'insureDateUnit': this.insureDateUnit, // 保障期间单位
             'paymentDate': this.paymentDate, // 缴费方式
+            "paymentWay": this.payFrequenciesWay, //
             'paymentDateUnit': this.payPeriodsUnit, // 缴费方式单位
             'insurePlan': this.amountsDefaultValues,
             'socailSecurity': this.socialSecuritiesDefaultValues,
             'age': typeof this.age !== 'undefined' ? this.age.toString() : '',
             'haveSmoke': typeof this.smokedListDefaultValues !== 'undefined' ? this.smokedListDefaultValues.toString() : '',
             'sex': typeof this.genderListDefaultValues !== 'undefined' ? this.genderListDefaultValues.toString() : '',
-            'newBill': this.isNewOrder
+            'newBill': this.isNewOrder,
+            'birthdayDate': this.birthdayDate,
+            'effectiveDate': this.effectiveDate
           }
         }
         list.push(listItem)
@@ -1814,16 +1608,6 @@ export default {
       if (url) {
         window.location.href = url
       }
-    },
-    showreceivAgePanel(){
-      this.isShowFullPanelReceivAge = true;
-    },
-    showreceivWayPanel(){
-      this.isShowReceivWay = true;
-    },
-    closeFullPanel() {
-      this.isShowFullPanelReceivAge = false;
-      this.isShowReceivWay = false;
     }
   },
   computed: {
@@ -1870,7 +1654,9 @@ export default {
   // },
   beforeRouteEnter (to, from, next) {
     // ....
-    if (from.name === 'setInsuranceOne' || from.name === 'setInsuranceGene') {
+    if (from.name === 'setInsuranceOne' || from.name === 'setInsuranceGene' ||
+        from.name === 'setInsuranceYear' || from.name === 'setInsuranceBaby')
+    {
       if (from.meta.keepAlive) {
         from.meta.keepAlive = false
       }
@@ -1897,6 +1683,15 @@ export default {
     .bottom-btn-area {
       .bottom-btn-con {
         z-index: 1002;
+      }
+    }
+
+    .changeZindex{
+      .windowMask{
+        z-index: 1003;
+      }
+      .common-pop-area{
+        z-index: 1004;
       }
     }
 
@@ -2749,352 +2544,6 @@ export default {
   }
   .jmv-toast.default {
     z-index: 1020!important;
-  }
-
-  .product-bohaiLife-box{
-    padding-right: px2rem(32);
-    overflow: hidden;
-    .try-calculation-ul{
-      .try-calculation-list {
-              height: px2rem(112);
-              line-height: px2rem(112);
-              border-bottom: 1px solid #e6e6e6;
-              display: flex;
-              align-items: center;
-              justify-content:space-between;
-              box-sizing: border-box;
-              .key {
-                font-size: px2rem(32);
-                font-family: 'PingFangSC-Medium';
-                color: #333333;
-                max-width: px2rem(300);
-              }
-              .val {
-                width:px2rem(288);
-                height: px2rem(72);
-                border: solid 1px #53AAB2;
-                border-radius: px2rem(4);
-                min-width: 0;
-                vertical-align: middle;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                position: relative;
-                background: #fff;
-                .picker-box{
-                  position: absolute;
-                  opacity: 0;
-                  width: 100%;
-                  left: 0;
-                  top:0;
-                }
-                /*去掉vux自带样式*/
-                .vux-no-group-title{
-                  margin-top: 0;
-                }
-                .weui-cells{
-                  margin-top: 0;
-                  background-color: transparent;
-                  line-height: px2rem(72);
-                  font-size: px2rem(28);
-                  .weui-cell{
-                    padding: 0;
-                    .vux-popup-picker-value{
-                      display: block;
-                    }
-                  }
-                }
-                /*去掉vux自带样式*/
-
-                .val-detail-key{
-                  width: px2rem(136);
-                  height: px2rem(72);
-                  background:rgba(83,170,178,.1);
-                  font-size: px2rem(28);
-                  color: #53AAB2;
-                  font-family: 'PingFangSC-Medium';
-                  text-align: center;
-                  line-height: px2rem(72);
-                  position: relative;
-                  &:after{
-                    content: "";
-                    position: absolute;
-                    right: 0;
-                    bottom: 0;
-                    border-right: 0;
-                    border-top: 0;
-                    border-bottom: px2rem(72) rgba(255,255,255,1) solid;
-                    border-left: px2rem(36)  rgba(83,170,178,0) solid;
-                  }
-                }
-                .val-detail-value{
-                  font-family: 'PingFangSC-Regular';
-                  font-size: px2rem(28);
-                  color: #666666;
-                  display: flex;
-                  justify-content: center;
-                  align-items: center;
-                  padding-right: px2rem(10);
-                  .sj-icon {
-                    width: px2rem(14);
-                    height: px2rem(24);
-                    background-image: url("//img30.360buyimg.com/jr_image/jfs/t1/32171/4/4484/230/5c7e4a8eE254f6f6a/7b76e30e4ee79548.png");
-                    background-size: cover;
-                    display: block;
-                    margin-left: px2rem(15);
-                  }
-                }
-              }
-            }
-      
-    
-    }
-    .try-calculation-total{
-      height: px2rem(144);
-      display: flex;
-      align-items: center;
-      justify-content:space-between;
-          .total-key{
-             display: flex;
-             flex-direction: column;
-             text-align: left;
-             .key{
-               font-family: 'PingFangSC-Medium';
-               font-size: px2rem(32);
-               color: #333333;
-               display: block;
-               height: px2rem(45);
-               line-height: px2rem(45);
-             }
-            .standard{
-              display: block;
-              font-family: PingFangSC-Regular;
-              font-size: px2rem(24);
-              color: #999999;
-              height: px2rem(33);
-              line-height: px2rem(33);
-            }
-          }
-          .total-val{
-            color: #EF4034;
-            .figure{
-              font-family: 'UDC1.04-Bold';
-              font-size: px2rem(48);
-              color: #EF4034;
-            }
-            .unit{
-              font-family: 'PingFangSC-Regular';
-              font-size: px2rem(32);
-              color: #EF4034;
-            }
-          }
-      }
-      .try-calculation-getway{
-        background: #FFFFFF;
-        box-shadow: 0 px2rem(4) px2rem(20) 0 rgba(0,0,0,0.07);
-        position: relative;
-        left:2%;
-        border-radius: px2rem(8);
-        height: px2rem(293);
-        padding:0 px2rem(28);
-        margin-bottom: px2rem(23);
-        .try-calculation-list{
-          height: px2rem(146);
-          border-bottom: solid 1px #EEEEEE;
-          display: flex;
-          justify-content: center;
-          flex-direction:column;
-          box-sizing: border-box;
-          &:last-child{
-            border-bottom:none;
-          }
-          .list-title{
-            font-family: 'PingFangSC-Regular';
-            font-size: px2rem(28);
-            color: #333333;
-            height: px2rem(40);
-            line-height: px2rem(40);
-            margin-bottom:px2rem(5);
-          }
-          .list-val{
-            .figure{
-              font-family: UDC1.04-Bold;
-              font-size: px2rem(40);
-              color: #EF4034;
-              height: px2rem(48);
-              line-height: px2rem(48);
-            }
-            .unit{
-              font-family: 'PingFangSC-Regular';
-              font-size: px2rem(32);
-              color: #EF4034;
-            }
-          }
-        }
-      }
-      .pro-select-infor-box{
-        .set-insurance-ul{
-          .set-insurance-list{
-            height: px2rem(112);
-            line-height: px2rem(112);
-            font-size: px2rem(32);
-            color: #333333;
-            border-bottom: 1px solid #eeeeee;
-            box-sizing: border-box;
-            display: flex;
-            align-items: center;
-            &:last-child{
-              border-bottom: none;
-            }
-            .key {
-              // float: left;
-              max-width: px2rem(160);
-              white-space: nowrap;
-              position: relative;
-              z-index: 100;
-              margin-right: px2rem(20);
-              .tips-icon {
-                width: px2rem(32);
-                height: px2rem(32);
-                background-image: url("//storage.jd.com/public-static-resource/insurance/images/icon-explain.png");
-                background-size: 100% 100%;
-                display: inline-block;
-                vertical-align: middle;
-                margin-left: px2rem(10);
-              }
-            }
-            .val {
-              //float: right;
-              flex: 1;
-              height: px2rem(112);
-              min-width: 0;
-              display: flex;
-              align-items: center;
-              justify-content: flex-end;
-              .input-item-box {
-                width: px2rem(500);
-                text-align: right;
-                height: px2rem(112);
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                position: relative;
-
-                .gray-text {
-                  /*font-weight: 400 !important;*/
-                }
-                .i-input {
-                  display: block;
-                  text-align: right;
-                  width: 100%;
-                  height: px2rem(112);
-                  background: none;
-                  position: relative;
-                  z-index: 2;
-                  padding-right: px2rem(36);
-                }
-                input {
-                  display: block;
-                  text-align: right;
-                  width: 100%;
-                  height: px2rem(112);
-                  background: none;
-                  z-index: 2;
-                }
-                .cell {
-                  position: absolute;
-                  right: 0;
-                }
-                .select-item-box {
-                  position: relative;
-                  padding-right: px2rem(24);
-                  max-width: px2rem(450);
-                  min-height: 100%;
-                  white-space: nowrap;
-                  text-overflow: ellipsis;
-                  overflow: hidden;
-                  span {
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
-                    font-size: px2rem(32);
-                    color: #999999;
-                  }
-                  .right-sj {
-                    width: px2rem(14);
-                    height: px2rem(24);
-                    background-image: url("//img30.360buyimg.com/jr_image/jfs/t1/19229/5/9625/230/5c80cb4eEa4378e05/44d63137bcb3edee.png");
-                    background-size: cover;
-                    display: block;
-                    position: absolute;
-                    top: 50%;
-                    right: 0;
-                    margin-top: px2rem(-12);
-                  }
-                }
-              }
-              .upload-pic-area {
-                display: flex;
-                width: 100%;
-                /*width: px2rem(410);*/
-                /*width: px2rem(410);*/
-                justify-content: flex-end;
-                /*justify-content: space-between;*/
-                align-items: center;
-                .upload-img-box {
-                  width: px2rem(120);
-                  height: px2rem(120);
-                  margin-left: px2rem(20);
-                  position: relative;
-                  background-color: #f5f5f5;
-                  .befor-upload-area {
-                    position: relative;
-                    width: px2rem(120);
-                    height: px2rem(120);
-                  }
-                  .after-upload-area {
-                    position: absolute;
-                    z-index: 10;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    img {
-                      width: px2rem(120);
-                      height: px2rem(120);
-                    }
-                  }
-                  input {
-                    width: px2rem(120);
-                    height: px2rem(120);
-                    opacity: 0;
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    z-index: 11;
-                  }
-                  .upload-img-front {
-                    padding-top: px2rem(20);
-                    .icon-add {
-                      width: px2rem(44);
-                      height: px2rem(44);
-                      background-image: url("//img30.360buyimg.com/jr_image/jfs/t1/20265/15/10724/795/5c88b504Eeb77802e/9eb8c044006fac44.png");
-                      background-size: cover;
-                      margin: 0 auto;
-                    }
-                    p {
-                      text-align: center;
-                      margin-top: px2rem(5);
-                      font-size: px2rem(24);
-                      color: #999999;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
   }
 
 </style>
